@@ -267,46 +267,101 @@ def validate_fn(program_path: str) -> Tuple[bool, str]:
         return False, f"Validation error: {e}"
 
 
-def main(program_path: str, results_dir: str):
-    """Main evaluation function."""
-    data_path = Path(__file__).parent / "qt_lr_data_2" / "test_data_qt_LR.json"
-    test_data = load_test_data(str(data_path), num_samples=5000)
+def main(program_path: str, results_dir: str, data_file: str = None, num_samples: int = None):
+    """
+    Main evaluation function.
     
+    Args:
+        program_path: Path to program being evaluated
+        results_dir: Directory to store results
+        data_file: Path to test data JSON file (default: test_data_qt_LR.json)
+        num_samples: Number of samples to use (default: 5000, None = use all)
+    """
+    # Check for data file from environment variable first
+    if data_file is None:
+        data_file = os.environ.get('QT_LR_DATA_FILE')
+    
+    # Use provided data file or default
+    if data_file is None:
+        data_path = Path(__file__).parent / "test_data_qt_LR.json"
+    else:
+        data_path = Path(data_file)
+    
+    # Check for num_samples from environment variable
+    if num_samples is None:
+        num_samples_env = os.environ.get('QT_LR_NUM_SAMPLES')
+        if num_samples_env is not None:
+            num_samples = int(num_samples_env)
+        else:
+            num_samples = 5000
+    
+    print(f"Loading test data from: {data_path}")
+    print(f"Using {num_samples} samples")
+    
+    test_data = load_test_data(str(data_path), num_samples=num_samples)
+    
+    # Closure to provide kwargs for each run
     def get_kwargs_closure(run_idx: int) -> dict:
         return get_experiment_kwargs(run_idx, test_data)
     
-    def custom_eval_fn(run_idx: int, result: Dict) -> Tuple[Dict, Dict]:
-        """Evaluate one run."""
-        case = test_data[run_idx]
-        ground_truth = {
-            'A': case['A'],
-            'B': case['B'],
-            'C': case['C'],
-        }
+    # Closure to aggregate results with access to test_data
+    def aggregate_metrics_closure(results: List[Dict]) -> Dict:
+        """
+        Aggregate metrics across all runs.
         
-        metrics = evaluate_single_case(result, ground_truth)
-        return (result, metrics)
+        Args:
+            results: List of results from run_experiment, one per test case
+                    Each result is a dict with keys 'A', 'B', 'C'
+        
+        Returns:
+            Aggregated metrics dictionary
+        """
+        # Evaluate each result against ground truth
+        evaluated_results = []
+        for i, result in enumerate(results):
+            case = test_data[i]
+            ground_truth = {
+                'A': case['A'],
+                'B': case['B'],
+                'C': case['C'],
+            }
+            
+            metrics = evaluate_single_case(result, ground_truth)
+            evaluated_results.append((result, metrics))
+        
+        # Use the aggregate_metrics function defined above
+        return aggregate_metrics(evaluated_results)
     
+    # Run evaluation using Shinka framework
     metrics, correct, err = run_shinka_eval(
         program_path=program_path,
         results_dir=results_dir,
         experiment_fn_name="run_experiment",
         num_runs=len(test_data),
         get_experiment_kwargs=get_kwargs_closure,
-        aggregate_metrics_fn=aggregate_metrics,
+        aggregate_metrics_fn=aggregate_metrics_closure,
         validate_fn=validate_fn,
-        custom_eval_fn=custom_eval_fn,
     )
     
     return metrics, correct, err
 
-
 if __name__ == "__main__":
     import argparse
     
-    parser = argparse.ArgumentParser()
-    parser.add_argument("program_path", type=str)
-    parser.add_argument("results_dir", type=str)
-    
+    parser = argparse.ArgumentParser(
+        description="(q,t)-LR rule using ShinkaEvolve"
+    )
+    parser.add_argument(
+        "--program_path",
+        type=str,
+        default="qt_LR_initial_v3.py",
+        help="Path to program to evaluate",
+    )
+    parser.add_argument(
+        "--results_dir",
+        type=str,
+        default="results",
+        help="Dir to save results (metrics.json, correct.json, extra.npz)",
+    )
     args = parser.parse_args()
     main(args.program_path, args.results_dir)

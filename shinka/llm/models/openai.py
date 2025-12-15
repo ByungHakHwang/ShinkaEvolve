@@ -1,6 +1,6 @@
 import backoff
 import openai
-from .pricing import OPENAI_MODELS
+from .pricing import OPENAI_MODELS, COMPLETIONS_OAI_MODELS
 from .result import QueryResult
 import logging
 
@@ -39,39 +39,45 @@ def query_openai(
 ) -> QueryResult:
     """Query OpenAI model."""
     new_msg_history = msg_history + [{"role": "user", "content": msg}]
-    if output_model is None:
-        response = client.responses.create(
+    
+    if model in COMPLETIONS_OAI_MODELS:
+        # Use completions API for non-chat models
+        response = client.completions.create(
             model=model,
-            input=[
+            prompt=system_msg + "\n\n" + msg,
+            **kwargs,
+        )
+        content = response.choices[0].text
+        new_msg_history.append({"role": "assistant", "content": content})
+    elif output_model is None:
+        response = client.chat.completions.create(
+            model=model,
+            messages=[
                 {"role": "system", "content": system_msg},
                 *new_msg_history,
             ],
             **kwargs,
         )
-        try:
-            content = response.output[0].content[0].text
-        except Exception:
-            # Reasoning models - ResponseOutputMessage
-            content = response.output[1].content[0].text
+        content = response.choices[0].message.content
         new_msg_history.append({"role": "assistant", "content": content})
     else:
-        response = client.responses.parse(
+        response = client.beta.chat.completions.parse(
             model=model,
-            input=[
+            messages=[
                 {"role": "system", "content": system_msg},
                 *new_msg_history,
             ],
-            text_format=output_model,
+            response_format=output_model,
             **kwargs,
         )
-        content = response.output_parsed
+        content = response.choices[0].message.parsed
         new_content = ""
         for i in content:
             new_content += i[0] + ":" + i[1] + "\n"
         new_msg_history.append({"role": "assistant", "content": new_content})
 
-    input_cost = OPENAI_MODELS[model]["input_price"] * response.usage.input_tokens
-    output_cost = OPENAI_MODELS[model]["output_price"] * response.usage.output_tokens
+    input_cost = OPENAI_MODELS[model]["input_price"] * response.usage.prompt_tokens
+    output_cost = OPENAI_MODELS[model]["output_price"] * response.usage.completion_tokens
     result = QueryResult(
         content=content,
         msg=msg,
@@ -79,8 +85,8 @@ def query_openai(
         new_msg_history=new_msg_history,
         model_name=model,
         kwargs=kwargs,
-        input_tokens=response.usage.input_tokens,
-        output_tokens=response.usage.output_tokens,
+        input_tokens=response.usage.prompt_tokens,
+        output_tokens=response.usage.completion_tokens,
         cost=input_cost + output_cost,
         input_cost=input_cost,
         output_cost=output_cost,

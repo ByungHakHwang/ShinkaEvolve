@@ -46,49 +46,17 @@ OPENAI_MODELS = {
         "input_price": 0.15 / M,
         "output_price": 0.6 / M,
     },
-    "gpt-4o-2024-08-06": {
-        "input_price": 2.5 / M,
-        "output_price": 10.0 / M,
-    },
-    "gpt-4o-mini-2024-07-18": {
-        "input_price": 0.15 / M,
-        "output_price": 0.6 / M,
-    },
-    "o1-2024-12-17": {
-        "input_price": 15.0 / M,
-        "output_price": 60.0 / M,
-    },
-    "o3-mini-2025-01-31": {
-        "input_price": 1.1 / M,
-        "output_price": 4.4 / M,
-    },
     "o3-mini": {
         "input_price": 1.1 / M,
         "output_price": 4.4 / M,
-    },
-    "gpt-4.5-preview-2025-02-27": {
-        "input_price": 75.0 / M,
-        "output_price": 150.0 / M,
-    },
-    "gpt-4.1-2025-04-14": {
-        "input_price": 2.0 / M,
-        "output_price": 8.0 / M,
     },
     "gpt-4.1": {
         "input_price": 2.0 / M,
         "output_price": 8.0 / M,
     },
-    "gpt-4.1-mini-2025-04-14": {
-        "input_price": 0.4 / M,
-        "output_price": 1.6 / M,
-    },
     "gpt-4.1-mini": {
         "input_price": 0.4 / M,
         "output_price": 1.6 / M,
-    },
-    "gpt-4.1-nano-2025-04-14": {
-        "input_price": 0.1 / M,
-        "output_price": 1.4 / M,
     },
     "gpt-4.1-nano": {
         "input_price": 0.1 / M,
@@ -97,10 +65,6 @@ OPENAI_MODELS = {
     "o3-2025-04-16": {
         "input_price": 10.0 / M,
         "output_price": 40.0 / M,
-    },
-    "o4-mini-2025-04-16": {
-        "input_price": 1.1 / M,
-        "output_price": 4.4 / M,
     },
     "o4-mini": {
         "input_price": 1.1 / M,
@@ -121,6 +85,26 @@ OPENAI_MODELS = {
     "gpt-5.1": {
         "input_price": 1.25 / M,
         "output_price": 10.0 / M,
+    },
+    "gpt-5.2": {
+        "input_price": 1.75 / M,
+        "output_price": 14.0 / M,
+    },
+    "gpt-5.1-codex-max": {
+        "input_price": 1.25 / M,
+        "output_price": 10.0 / M,
+    },
+    "gpt-4o": {
+        "input_price": 2.5 / M,
+        "output_price": 10.0 / M,
+    },
+    "o3": {
+        "input_price": 2.0 / M,
+        "output_price": 8.0 / M,
+    },
+    "o4-mini-deep-research": {
+        "input_price": 2.0 / M,
+        "output_price": 8.0 / M,
     },
 }
 
@@ -180,9 +164,16 @@ REASONING_OAI_MODELS = [
     "o4-mini-2025-04-16",
     "o4-mini",
     "o3-mini",
-    "gpt-5",
+    "o3",
+    "o4-mini-deep-research",
     "gpt-5-mini",
-    "gpt-5-nano",
+    "gpt-5",
+    # "gpt-5-nano",
+]
+
+COMPLETIONS_OAI_MODELS = [
+    "gpt-5.1-codex-max",
+    "o4-mini-deep-research",
 ]
 
 REASONING_CLAUDE_MODELS = [

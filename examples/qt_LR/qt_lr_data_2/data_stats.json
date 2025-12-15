@@ -1,0 +1,8 @@
+{
+  "total_original": 123658,
+  "total_converted": 123658,
+  "train_size": 7500,
+  "val_size": 1500,
+  "test_size": 2365,
+  "train_pieri_ratio": 0.2856
+}

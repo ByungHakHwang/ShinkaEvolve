@@ -14,6 +14,7 @@ from .models.pricing import (
     REASONING_GEMINI_MODELS,
     REASONING_AZURE_MODELS,
     REASONING_BEDROCK_MODELS,
+    COMPLETIONS_OAI_MODELS,
 )
 from .models import (
     query_anthropic,
@@ -127,18 +128,18 @@ def sample_model_kwargs(
     # perform reasoning effort sampling if list provided
     # set max_completion_tokens for OAI reasoning models
     if kwargs_dict["model_name"] in (REASONING_OAI_MODELS + REASONING_AZURE_MODELS):
-        kwargs_dict["max_output_tokens"] = random.choice(max_tokens)
+        kwargs_dict["max_completion_tokens"] = 16384
         r_effort = random.choice(reasoning_efforts)
         if r_effort != "auto":
-            kwargs_dict["reasoning"] = {"effort": r_effort}
+            kwargs_dict["reasoning_effort"] = r_effort
 
     if kwargs_dict["model_name"] in (REASONING_GEMINI_MODELS):
-        kwargs_dict["max_tokens"] = random.choice(max_tokens)
+        kwargs_dict["max_completion_tokens"] = random.choice(max_tokens)
         r_effort = random.choice(reasoning_efforts)
         think_bool = r_effort != "auto"
         if think_bool:
             t = THINKING_TOKENS[r_effort]
-            thinking_tokens = t if t < kwargs_dict["max_tokens"] else 1024
+            thinking_tokens = t if t < kwargs_dict["max_completion_tokens"] else 1024
             kwargs_dict["extra_body"] = {
                 "extra_body": {
                     "google": {
@@ -175,10 +176,11 @@ def sample_model_kwargs(
             or kwargs_dict["model_name"] in REASONING_BEDROCK_MODELS
             or kwargs_dict["model_name"] in DEEPSEEK_MODELS
             or kwargs_dict["model_name"] in REASONING_DEEPSEEK_MODELS
+            or kwargs_dict["model_name"] in COMPLETIONS_OAI_MODELS
         ):
             kwargs_dict["max_tokens"] = random.choice(max_tokens)
         else:
-            kwargs_dict["max_output_tokens"] = random.choice(max_tokens)
+            kwargs_dict["max_completion_tokens"] = random.choice(max_tokens)
 
     return kwargs_dict
 
@@ -196,6 +198,14 @@ def query(
     client, model_name = get_client_llm(
         model_name, structured_output=output_model is not None
     )
+    
+    # Remove unsupported options for reasoning models
+    if model_name in REASONING_OAI_MODELS or model_name in REASONING_CLAUDE_MODELS or model_name in REASONING_DEEPSEEK_MODELS or model_name in REASONING_GEMINI_MODELS or model_name in REASONING_AZURE_MODELS or model_name in REASONING_BEDROCK_MODELS:
+        kwargs = {k: v for k, v in kwargs.items() if k not in ["temperature", "reasoning_efforts"]}
+    else:
+        # Remove reasoning_effort for non-reasoning models
+        kwargs = {k: v for k, v in kwargs.items() if k != "reasoning_effort"}
+    
     if model_name in CLAUDE_MODELS.keys() or "anthropic" in model_name:
         query_fn = query_anthropic
     elif model_name in OPENAI_MODELS.keys():

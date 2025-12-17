@@ -1,3 +1,6 @@
+# CUSTOM
+results_qt_LR/*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -173,3 +176,4 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+results_qt_LR/gen_129/main.py
